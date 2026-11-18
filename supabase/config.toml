@@ -1,0 +1,2 @@
+[functions.fal-realtime-token]
+verify_jwt = true
