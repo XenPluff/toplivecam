@@ -255,6 +255,7 @@ export default function LiveStudio() {
 
   async function startTransformation() {
     if (!supabase || !cameraStream.current) { setNotice("Enable your camera before starting."); return; }
+    const client = supabase;
     if (!prompt.trim()) { setNotice("Enter a transformation instruction."); return; }
     if (liveSession.current) await stopLiveSession();
     setBusy(true);
@@ -263,17 +264,17 @@ export default function LiveStudio() {
     try {
       let referenceUrl: string | undefined;
       if (referencePath) {
-        const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(referencePath, 900);
+        const { data, error } = await client.storage.from(BUCKET).createSignedUrl(referencePath, 900);
         if (error || !data?.signedUrl) throw error ?? new Error("Could not create temporary reference URL.");
         referenceUrl = data.signedUrl;
       }
-      const { data: { session: authSession } } = await supabase.auth.getSession();
+      const { data: { session: authSession } } = await client.auth.getSession();
       if (!authSession) throw new Error("Your sign-in session expired. Sign in again.");
       const tokenProvider = async (app: string) => {
         // Read the current Supabase session each time fal asks for a token.
         // This allows Supabase's automatic access-token refresh to take effect
         // during longer realtime sessions.
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        const { data: { session: currentSession } } = await client.auth.getSession();
         if (!currentSession) throw new Error("Your sign-in session expired. Sign in again.");
         const response = await fetch(process.env.NEXT_PUBLIC_SUPABASE_URL + "/functions/v1/fal-realtime-token", {
           method: "POST",
