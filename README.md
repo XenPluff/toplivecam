@@ -25,7 +25,7 @@ Use Node.js 20.9+ and HTTPS (localhost is also a secure context) for camera acce
 
 ## Secrets
 Only browser-safe Supabase URL and anon/publishable key belong in `.env.local`.
-Set `FAL_KEY`, `APP_PIN`, and `APP_ORIGIN` as Supabase Edge Function secrets. Never commit secrets.
+Set `FAL_KEY` and `APP_ORIGIN` as Supabase Edge Function secrets. Never commit secrets.
 
 ## Current implementation
 - Supabase email sign-in and authenticated studio access.
@@ -35,6 +35,6 @@ Set `FAL_KEY`, `APP_PIN`, and `APP_ORIGIN` as Supabase Edge Function secrets. Ne
 - Lucy WebRTC integration using the current `@fal-ai/client` Lucy extension (`fal.realtime.open` / `lucyRealtime`) so the camera stream and remote output are attached to WebRTC media tracks.
 - Measured camera and remote output FPS using browser video-frame callbacks. Latency is not claimed until measured.
 
-The code is implemented but not yet end-to-end verified against the deployed Supabase project and a physical webcam. Do not claim a working live transformation until the acceptance test passes. OBS output and audio are not implemented.
+The code is implemented but not yet end-to-end verified against the deployed Supabase project and a physical webcam. The token endpoint uses fal's `https://rest.alpha.fal.ai/tokens/` service and restricts the issued token to the `lucy-2-6` app alias. Do not claim a working live transformation until the acceptance test passes. OBS output and audio are not implemented.
 
 See `docs/SUPABASE_DEPLOYMENT.md` for deployment and `docs/REALTIME_ACCEPTANCE_TEST.md` for the release gate.
