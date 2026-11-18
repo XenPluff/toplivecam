@@ -21,7 +21,7 @@ type Character = {
 
 type LiveHandle = {
   close: () => Promise<void>;
-  send: (input: Record<string, unknown>) => void;
+  send: (input: { prompt?: string; enable_prompt_expansion?: boolean; reference_image_url?: string } & Record<string, unknown>) => void;
 };
 
 export default function LiveStudio() {
