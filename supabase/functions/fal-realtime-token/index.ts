@@ -103,7 +103,7 @@ Deno.serve(async (request) => {
         Authorization: `Key ${falKey}`,
       },
       body: JSON.stringify({
-        allowed_apps: [MODEL_APP],
+        allowed_apps: ["lucy-2-6"],
         token_expiration: TOKEN_EXPIRATION_SECONDS,
       }),
     });
