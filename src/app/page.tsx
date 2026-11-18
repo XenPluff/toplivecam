@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { supabase } from "@/lib/supabase/client";
 
 const MODEL = "decart/lucy-2-6/realtime";
 
@@ -15,11 +16,26 @@ export default function Home() {
   const [pin,setPin] = useState("");
   const [notice,setNotice] = useState("Camera preview is local. AI inference is not connected yet.");
   const [seconds,setSeconds] = useState(0);
+  const [authReady,setAuthReady] = useState(false);
+  const [userEmail,setUserEmail] = useState("");
 
-  useEffect(()=>{ navigator.mediaDevices?.enumerateDevices().then(setDevices).catch(()=>{}); },[]);
+  useEffect(()=>{
+    if (!supabase) { setAuthReady(true); setNotice("Supabase is not configured. Add the public Supabase URL and publishable key to the app environment."); return; }
+    supabase.auth.getSession().then(({data})=>{
+      if (!data.session) { window.location.replace("/login"); return; }
+      setUserEmail(data.session.user.email ?? ""); setAuthReady(true);
+    });
+    const {data:{subscription}}=supabase.auth.onAuthStateChange((_event,session)=>{
+      if (!session) { window.location.replace("/login"); return; }
+      setUserEmail(session.user.email ?? ""); setAuthReady(true);
+    });
+    return ()=>subscription.unsubscribe();
+  },[]);
+  useEffect(()=>{ if(authReady) navigator.mediaDevices?.enumerateDevices().then(setDevices).catch(()=>{}); },[authReady]);
   useEffect(()=>{ if(!preview)return; const id=setInterval(()=>setSeconds(s=>s+1),1000); return()=>clearInterval(id); },[preview]);
   useEffect(()=>()=>{stream.current?.getTracks().forEach(t=>t.stop());},[]);
 
+  async function signOut(){ await supabase?.auth.signOut(); stopCamera(); window.location.replace("/login"); }
   async function startCamera() {
     try {
       const s=await navigator.mediaDevices.getUserMedia({video:{deviceId:camera?{exact:camera}:undefined,frameRate:{ideal:30},width:{ideal:1280},height:{ideal:720}},audio:false});
@@ -38,9 +54,12 @@ export default function Home() {
     img.onerror=()=>{URL.revokeObjectURL(url);setNotice("Could not read the reference image.");};img.src=url;
   }
 
+  if (!authReady) return <main className="auth-shell"><section className="auth-card"><b>TOPLIVECAM</b><p>Verifying your private session…</p></section></main>;
+  if (!supabase) return <main className="auth-shell"><section className="auth-card"><b>TOPLIVECAM</b><h1>App configuration needed</h1><p>{notice}</p><a className="auth-back" href="/login">Open sign in</a></section></main>;
+
   return <main>
     <aside><div className="brand"><span className="mark">✧</span><div><b>TOPLIVE<span>CAM</span></b><small>PRIVATE LIVE STUDIO</small></div></div><p className="overline">WORKSPACE</p><div className="nav active">◉　Live Studio</div><div className="nav">▧　Character Library <i>SOON</i></div><div className="security">◈　Private by design<br/><small>Provider credentials stay server-side</small></div></aside>
-    <section className="workspace"><header><div><small>YOUR PRIVATE CREATIVE SPACE</small><h1>Live character studio</h1></div><label>▣　PRIVATE SESSION</label></header>
+    <section className="workspace"><header><div><small>YOUR PRIVATE CREATIVE SPACE</small><h1>Live character studio</h1></div><label>▣　PRIVATE SESSION · {userEmail}</label><button className="secondary" onClick={signOut}>Sign out</button></header>
       <div className="layout"><section className="canvas"><div className="heading"><div><small>LIVE CANVAS</small><h2>Your camera, transformed</h2></div><span className={preview?"online":"offline"}>● {preview?"CAMERA PREVIEW":"READY"}</span></div>
         <div className="screen"><video ref={video} autoPlay playsInline muted/><div className="placeholder" style={{display:preview?"none":"flex"}}><div>✧</div><b>Your live studio awaits</b><span>Enable your camera to see your original feed.</span></div><div className="screen-label">LIVE INPUT · TARGET 720P / 30 FPS</div><div className="stats"><span>CAMERA INPUT<b>{fps||"—"} FPS</b></span><span>AI OUTPUT<b>— FPS</b></span><span>LATENCY<b>— MS</b></span></div></div>
         <div className="actions">{!preview?<button onClick={startCamera}>Enable camera preview</button>:<button className="danger" onClick={stopCamera}>Stop camera</button>}<button className="secondary" onClick={()=>document.documentElement.requestFullscreen?.()}>Fullscreen</button></div>
