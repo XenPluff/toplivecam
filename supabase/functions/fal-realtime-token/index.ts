@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const MODEL_APP = "decart/lucy-2-6/realtime";
-const TOKEN_DURATION_SECONDS = 120;
+const TOKEN_EXPIRATION_SECONDS = 120;
 
 const json = (body: unknown, status: number, origin: string) =>
   new Response(JSON.stringify(body), {
@@ -96,7 +96,7 @@ Deno.serve(async (request) => {
 
   let falResponse: Response;
   try {
-    falResponse = await fetch("https://rest.fal.ai/tokens/realtime", {
+    falResponse = await fetch("https://rest.fal.ai/tokens/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -104,7 +104,7 @@ Deno.serve(async (request) => {
       },
       body: JSON.stringify({
         allowed_apps: [MODEL_APP],
-        duration: TOKEN_DURATION_SECONDS,
+        token_expiration: TOKEN_EXPIRATION_SECONDS,
       }),
     });
   } catch {
@@ -116,16 +116,36 @@ Deno.serve(async (request) => {
     return json({ error: "fal could not issue a realtime token" }, 502, requestOrigin);
   }
 
-  let falData: { token?: unknown };
+  let token = "";
   try {
-    falData = await falResponse.json();
+    const responseText = await falResponse.text();
+    // fal's realtime token provider expects the JWT as plain response text.
+    // Accept either a raw text JWT or a JSON string/object response.
+    try {
+      const parsed: unknown = JSON.parse(responseText);
+      if (typeof parsed === "string") token = parsed;
+      else if (parsed && typeof parsed === "object" && "token" in parsed &&
+               typeof (parsed as { token?: unknown }).token === "string") {
+        token = (parsed as { token: string }).token;
+      }
+    } catch {
+      token = responseText.trim();
+    }
   } catch {
     return json({ error: "Invalid response from fal token service" }, 502, requestOrigin);
   }
 
-  if (typeof falData.token !== "string" || falData.token.length < 20) {
+  if (token.length < 20 || token.length > 8192) {
     return json({ error: "fal returned an invalid realtime token" }, 502, requestOrigin);
   }
 
-  return json({ token: falData.token }, 200, requestOrigin);
+  return new Response(token, {
+    status: 200,
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Cache-Control": "no-store",
+      "Access-Control-Allow-Origin": requestOrigin,
+      "Vary": "Origin",
+    },
+  });
 });
