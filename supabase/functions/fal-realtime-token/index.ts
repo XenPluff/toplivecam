@@ -96,7 +96,7 @@ Deno.serve(async (request) => {
 
   let falResponse: Response;
   try {
-    falResponse = await fetch("https://rest.fal.ai/tokens/", {
+    falResponse = await fetch("https://rest.alpha.fal.ai/tokens/", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
