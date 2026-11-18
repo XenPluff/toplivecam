@@ -180,7 +180,8 @@ export default function LiveStudio() {
   }
 
   async function uploadCharacter(file?: File) {
-    if (!file || !supabase) return;
+    const client = supabase;
+    if (!file || !client) return;
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
       setNotice("Choose a JPEG, PNG or WebP image.");
       return;
@@ -197,16 +198,16 @@ export default function LiveStudio() {
         setNotice("Reference image must be at least 512 × 512 pixels.");
         return;
       }
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await client.auth.getUser();
       if (!user) { router.replace("/login"); return; }
       setBusy(true);
       try {
         const extension = file.type === "image/jpeg" ? "jpg" : file.type === "image/png" ? "png" : "webp";
         const path = user.id + "/" + crypto.randomUUID() + "." + extension;
-        const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, file, { contentType: file.type, upsert: false });
+        const { error: uploadError } = await client.storage.from(BUCKET).upload(path, file, { contentType: file.type, upsert: false });
         if (uploadError) throw uploadError;
         const name = newCharacterName.trim() || file.name.replace(/\.[^.]+$/, "").slice(0, 80);
-        const { data, error } = await supabase.from("characters").insert({
+        const { data, error } = await client.from("characters").insert({
           user_id: user.id,
           name,
           description: "",
@@ -214,7 +215,7 @@ export default function LiveStudio() {
           mime_type: file.type,
         }).select("id").single();
         if (error) {
-          await supabase.storage.from(BUCKET).remove([path]);
+          await client.storage.from(BUCKET).remove([path]);
           throw error;
         }
         await refreshCharacters();
