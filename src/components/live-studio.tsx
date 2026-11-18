@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fal } from "@fal-ai/client";
-import { lucyRealtime } from "@fal-ai/client/realtime/lucy";
+import { lucyRealtime } from "@fal-ai/client/realtime";
 import { supabase } from "@/lib/supabase/client";
 
 const MODEL = "decart/lucy-2-6/realtime";
@@ -269,12 +269,17 @@ export default function LiveStudio() {
       const { data: { session: authSession } } = await supabase.auth.getSession();
       if (!authSession) throw new Error("Your sign-in session expired. Sign in again.");
       const tokenProvider = async (app: string) => {
+        // Read the current Supabase session each time fal asks for a token.
+        // This allows Supabase's automatic access-token refresh to take effect
+        // during longer realtime sessions.
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        if (!currentSession) throw new Error("Your sign-in session expired. Sign in again.");
         const response = await fetch(process.env.NEXT_PUBLIC_SUPABASE_URL + "/functions/v1/fal-realtime-token", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "apikey": process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "",
-            "Authorization": "Bearer " + authSession.access_token,
+            "Authorization": "Bearer " + currentSession.access_token,
           },
           body: JSON.stringify({ app }),
         });
