@@ -1,2 +1,2 @@
 [functions.fal-realtime-token]
-verify_jwt = true
+verify_jwt = false # Function validates the Supabase access token itself; allow browser OPTIONS preflight.
