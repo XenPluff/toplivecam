@@ -20,3 +20,19 @@
 .auth-message{margin-top:18px;color:#e4c98e;line-height:1.5;font-size:13px}
 .auth-switch,.auth-back{display:block;margin-top:18px;color:#d7b879;background:none;border:0;padding:0;text-decoration:none;cursor:pointer;font-size:13px}
 .auth-back{color:#a99eac}
+
+
+.video-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.video-grid .screen{min-height:260px;aspect-ratio:16/9}
+.video-grid video{width:100%;height:100%;object-fit:contain;background:#09080b}
+.header-account{display:flex;align-items:center;gap:12px}
+.header-account label{max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.panel input:not([type=file]){width:100%;padding:12px;border:1px solid #514353;border-radius:8px;background:#120f16;color:#fff;margin:8px 0}
+.panel select{width:100%;padding:12px;border:1px solid #514353;border-radius:8px;background:#120f16;color:#fff;margin:8px 0}
+.panel textarea{width:100%;min-height:110px;padding:12px;border:1px solid #514353;border-radius:8px;background:#120f16;color:#fff;resize:vertical}
+.panel .upload{display:block;cursor:pointer;border:1px dashed #78647b;border-radius:9px;padding:14px;margin:10px 0;color:#e5d4ad}
+.panel .upload input{display:block;width:100%;margin-top:10px}
+.panel .upload small{display:block;color:#a99eac;margin-top:7px}
+.header-account button{white-space:nowrap}
+@media(max-width:1000px){.video-grid{grid-template-columns:1fr}.header-account{align-items:flex-end;flex-direction:column}}
+@media(max-width:640px){.auth-card{padding:24px}.header-account label{max-width:180px}}
